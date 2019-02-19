@@ -3,7 +3,7 @@ const client = new Discord.Client();
 const config = require("./config.json")
 const keys = require("./private.json");
 
-// Store token in config (DO NOT PASTE TOKEN OUTSIDE OF CONFIG)
+// Store token in config (DO NOT PASTE TOKEN OUTSIDE OF PRIVATE)
 let token = keys.token;
 var prefix = config.prefix;
 
