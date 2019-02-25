@@ -4,11 +4,11 @@ exports.run = (message, args) => {
             throw new Error('you did not specify discussion topic!')
         }
 
-        topic_regex = /(\w+)([\s-]\w)*/ // letters-plus whitespace or-dashes
+        topic_regex = /(\w+)(-\w+)*/ // letters-plus-dashes
         if (!topic.match(topic_regex)) {
-            throw new Error('invalid topic string')
+            throw new Error('invalid topic expression')
         }
-        topic = topic.replace(' ', '-')
+
         // having checked for a topic arg lets us with options
         options = args.slice(1)
         // being undefined or something else
