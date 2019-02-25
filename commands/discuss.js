@@ -1,7 +1,4 @@
-module.exports = {
-    name : 'discuss',
-    help : 'Start or end a discussion',
-    execute(message, args) {
+exports.run = (message, args) => {
         topic = args[0]
         status = args[1]
         if (status == undefined) {
@@ -38,4 +35,8 @@ module.exports = {
                 break
         }
     }
+
+exports.config = {
+    name : 'discuss',
+    help : 'Starts or ends a discussion'
 }
