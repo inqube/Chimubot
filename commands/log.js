@@ -7,14 +7,38 @@ exports.run = async (message, args) => {
         channelName = message.channel.name
     }
 
-    let startID = args[1] == undefined ? null : args[1] // doesnt catch first
-    let endID = args[2] == undefined ? null : args[2] // catches last
+    let startString = args[1] == undefined ? null : args[1]
+    let endString = args[2] == undefined ? null : args[2]
 
-    // datetime_regex = /([0-3][0-9])\-([01][012])\-(20[12][0-9])/ // DDMMYYYY
-    // // SnowFlake is YYYY-MM-DDTHH:MM:SS:FFFZ
-    // startDateGroups = startDate.match(datetime_regex)
+    // YYYY-MM-DDTHH:MM:SS
+    // month and day are obligatory
+    // year and time are optional (time must contain THH:MM); 24h format
+    // no year yields current year, no time yields 00:00:00:000
+    datetime_regex = /(20[12][0-9])?\-?([01][0-9])\-([0-3][0-9])(T([012][0-9])\:([0-6][0-9])\:?([0-6][0-9])?)?/
 
-    //bot.guilds.find(guildName => guildName.id == myguildidwashere
+    let startStringMatches = startString.match(datetime_regex)
+    let startYear = (startStringMatches[1] || String(new Date().getFullYear()))
+    let startMonth = startStringMatches[2]
+    let startDay = startStringMatches[3]
+    let startHour = startStringMatches[5] || "01" // gmt+1
+    let startMinute = startStringMatches[6] || "00"
+    let startSecond = startStringMatches[7] || "00"
+
+    let startDate = new Date(`${startYear}\-${startMonth}\-${startDay}T${startHour}\:${startMinute}\:${startSecond}`)
+    let startID = Discord.SnowflakeUtil.generate(startDate)
+
+    let endStringMatches = endString.match(datetime_regex)
+    let endYear = (endStringMatches[1] || String(new Date().getFullYear()))
+    let endMonth = endStringMatches[2]
+    let endDay = endStringMatches[3]
+    let endHour = endStringMatches[5] || "01" // gmt+1
+    let endMinute = endStringMatches[6] || "00"
+    let endSecond = endStringMatches[7] || "00"
+
+    let endDate = new Date(`${endYear}\-${endMonth}\-${endDay}T${endHour}\:${endMinute}\:${endSecond}`)
+    let endID = String(Discord.SnowflakeUtil.generate(endDate))
+
+    // possibly use .get to get ids, and client/bot instead of message...
     let theChannel = await message.guild.channels.find(
         c => c.name == channelName && c.type == 'text')
 
@@ -27,7 +51,7 @@ exports.run = async (message, args) => {
         return (Object.keys(logs[0])[0] == end)
     }
 
-    async function continueFetching(current) {
+    async function continueFetching(current, nm = 0) {
         let currentID = Object.keys(current[0])[0]
         let moreLogs = (await theChannel.fetchMessages({ after: currentID })
             .then(logs => logs.filter(msg => msg.id <= endID))
@@ -35,13 +59,15 @@ exports.run = async (message, args) => {
         ).map(msg => ({ [msg.id]: [msg.author.username, msg.content] }))
 
         let extendedLogs = moreLogs.concat(current)
-
-        if (!fetchComplete(extendedLogs, endID)) {
+        nnm = Object.keys(extendedLogs).length
+        // need to check if consequent calls for the function do something
+        // because endID may not correspond to a message's id and therefore
+        // fetchComplete will not return true -> possibly change fetchComplete
+        if (!fetchComplete(extendedLogs, endID) && (nnm - nm != 0)) {
             console.log('Continuing fetches...')
-            console.log(`Current number of messages: \
-                ${Object.keys(extendedLogs).length}`)
-            if (Object.keys(extendedLogs).length > 5000) { return extendedLogs }
-            return continueFetching(extendedLogs)
+            console.log(`Current number of messages: ${nnm}`)
+            // if (Object.keys(extendedLogs).length > 5000) { return extendedLogs }
+            return continueFetching(extendedLogs, nnm)
         } else {
             console.log('Finished fetching!')
             return extendedLogs
@@ -61,7 +87,7 @@ exports.run = async (message, args) => {
     })
 
     let numberOfMessages = Object.keys(logs).length
-    let fileStats = fs.statSync(`${channelName}.json`, (err) => {
+    let fileStats = await fs.statSync(`${channelName}.json`, (err) => {
         if (err) throw err
     })
     let fileSize = fileStats.size / 1024.0
