@@ -9,8 +9,8 @@ exports.run = async (bot, message, args, flags) => {
         '(T([012][0-9])\:([0-6][0-9])\:?([0-6][0-9])?)?']
         .join(''))
 
-    hasChannelName = args[0] ?
-        ((args[0].match(datetimeRegexp) === null) === true) : false
+    hasChannelName = args[0]
+        ? ((args[0].match(datetimeRegexp) === null) === true) : false
 
     let channelName = hasChannelName ? args[0] : message.channel.name
     let startString = hasChannelName ? (args[1] || null) : (args[0] || null)
@@ -24,55 +24,53 @@ exports.run = async (bot, message, args, flags) => {
     + No year input yields current year, no time input yields 00:00:00:000
     */
 
-    let startStringMatches = startString === null ?
-        null : (await startString.match(datetimeRegexp))
-    let endStringMatches = endString === null ?
-        null : (await endString.match(datetimeRegexp))
+    let startStringMatches = startString === null
+        ? null : (await startString.match(datetimeRegexp))
+    let endStringMatches = endString === null
+        ? null : (await endString.match(datetimeRegexp))
     // if any of startString/endString are IDs, matches will return null
 
     switch (startStringMatches === null) {
-
-        case true: // startString is an ID or null
-            var startID = startString || 
+    case true: // startString is an ID or null
+        var startID = startString ||
                 Discord.SnowflakeUtil.generate(message.channel.createdAt)
-            break
+        break
 
-        case false: // startString is a datetime
-            let startStringMatches = startString.match(datetimeRegexp)
-            // group 0 is full match
-            let startYear = (startStringMatches[1] || String(new Date().getFullYear()))
-            let startMonth = startStringMatches[2]
-            let startDay = startStringMatches[3]
-            // group 4 is time full match (THH:MM:SS)
-            let startHour = startStringMatches[5] || "01" // GMT+1
-            let startMinute = startStringMatches[6] || "00"
-            let startSecond = startStringMatches[7] || "00"
+    case false: // startString is a datetime
+        let startStringMatches = startString.match(datetimeRegexp)
+        // group 0 is full match
+        let startYear = (startStringMatches[1] || String(new Date().getFullYear()))
+        let startMonth = startStringMatches[2]
+        let startDay = startStringMatches[3]
+        // group 4 is time full match (THH:MM:SS)
+        let startHour = startStringMatches[5] || '01' // GMT+1
+        let startMinute = startStringMatches[6] || '00'
+        let startSecond = startStringMatches[7] || '00'
 
-            let startDate = new Date(
-                `${startYear}\-${startMonth}\-${startDay}T${startHour}\:${startMinute}\:${startSecond}`)
-            var startID = Discord.SnowflakeUtil.generate(startDate)
-            break
+        let startDate = new Date(
+            `${startYear}\-${startMonth}\-${startDay}T${startHour}\:${startMinute}\:${startSecond}`)
+        var startID = Discord.SnowflakeUtil.generate(startDate)
+        break
     }
 
     switch (endStringMatches === null) {
+    case true:
+        var endID = endString || message.id
+        break
 
-        case true:
-            var endID = endString || message.id
-            break
+    case false:
+        let endStringMatches = endString.match(datetimeRegexp)
+        let endYear = (endStringMatches[1] || String(new Date().getFullYear()))
+        let endMonth = endStringMatches[2]
+        let endDay = endStringMatches[3]
+        let endHour = endStringMatches[5] || '01'
+        let endMinute = endStringMatches[6] || '00'
+        let endSecond = endStringMatches[7] || '00'
 
-        case false:
-            let endStringMatches = endString.match(datetimeRegexp)
-            let endYear = (endStringMatches[1] || String(new Date().getFullYear()))
-            let endMonth = endStringMatches[2]
-            let endDay = endStringMatches[3]
-            let endHour = endStringMatches[5] || "01"
-            let endMinute = endStringMatches[6] || "00"
-            let endSecond = endStringMatches[7] || "00"
-
-            let endDate = new Date(
-                `${endYear}\-${endMonth}\-${endDay}T${endHour}\:${endMinute}\:${endSecond}`)
-            var endID = Discord.SnowflakeUtil.generate(endDate)
-            break
+        let endDate = new Date(
+            `${endYear}\-${endMonth}\-${endDay}T${endHour}\:${endMinute}\:${endSecond}`)
+        var endID = Discord.SnowflakeUtil.generate(endDate)
+        break
     }
 
     // not using find() with channel ID because channelName is a command arg
@@ -90,8 +88,7 @@ exports.run = async (bot, message, args, flags) => {
         return (Object.keys(logs[0])[0] == end)
     }
 
-    async function continueFetching(current, nm = 0) {
-
+    async function continueFetching (current, nm = 0) {
         // get ID of current logs' last message
         let currentID = Object.keys(current[0])[0]
         // continue fetching after current last ID
@@ -113,7 +110,6 @@ exports.run = async (bot, message, args, flags) => {
             console.log('Continuing fetches...')
             console.log(`Current number of messages: ${nnm}`)
             return continueFetching(extendedLogs, nnm)
-
         } else {
             console.log(`Final number of messages: ${nnm}`)
             console.log('Finished fetching!')
@@ -128,15 +124,15 @@ exports.run = async (bot, message, args, flags) => {
 
     if (Boolean(flags.get('use-dates')) === true) {
         for (i = 0; i < logs.length; i++) {
-            for ( [key, msg] of Object.entries(logs[i]) ) {
+            for ([key, msg] of Object.entries(logs[i])) {
                 var idDate = Discord.SnowflakeUtil.deconstruct(key).date
                 // be sure to get a unique key by showing ms in the date
                 var strDate = idDate.toLocaleDateString('en-GB',
                     { 'hour': '2-digit',
-                      'minute': '2-digit',
-                      'second': '2-digit',
-                      'hour12': false})
-                    + `.${String(idDate.getMilliseconds()).padStart(3, '0')}`
+                        'minute': '2-digit',
+                        'second': '2-digit',
+                        'hour12': false }) +
+                    `.${String(idDate.getMilliseconds()).padStart(3, '0')}`
 
                 delete logs[i][key]
                 logs[i][strDate] = msg
@@ -157,24 +153,24 @@ exports.run = async (bot, message, args, flags) => {
     let fileSize = fileStats.size / 1024.0 // KB
 
     let printStartDate = Discord.SnowflakeUtil.deconstruct(startID).date
-                .toLocaleDateString('en-GB',
-                    { 'timeZone': 'UTC',
-                      'hour': '2-digit',
-                      'minute': '2-digit',
-                      'second': '2-digit',
-                      'hour12': false})
-                + `.${String(Discord.SnowflakeUtil.deconstruct(startID).date
-                        .getMilliseconds()).padStart(3, '0')}`
+        .toLocaleDateString('en-GB',
+            { 'timeZone': 'UTC',
+                'hour': '2-digit',
+                'minute': '2-digit',
+                'second': '2-digit',
+                'hour12': false }) +
+                `.${String(Discord.SnowflakeUtil.deconstruct(startID).date
+                    .getMilliseconds()).padStart(3, '0')}`
 
     let printEndDate = Discord.SnowflakeUtil.deconstruct(endID).date
-                .toLocaleDateString('en-GB',
-                    { 'timeZone': 'UTC',
-                      'hour': '2-digit',
-                      'minute': '2-digit',
-                      'second': '2-digit',
-                      'hour12': false})
-                + `.${String(Discord.SnowflakeUtil.deconstruct(endID).date
-                        .getMilliseconds()).padStart(3, '0')}`
+        .toLocaleDateString('en-GB',
+            { 'timeZone': 'UTC',
+                'hour': '2-digit',
+                'minute': '2-digit',
+                'second': '2-digit',
+                'hour12': false }) +
+                `.${String(Discord.SnowflakeUtil.deconstruct(endID).date
+                    .getMilliseconds()).padStart(3, '0')}`
 
     var fileMessage = (await new Discord.RichEmbed()
         .setTitle(`#${logChannel.name} logs`)
