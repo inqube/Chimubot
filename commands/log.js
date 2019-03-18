@@ -1,6 +1,6 @@
 const Discord = require('discord.js')
 const fs = require('fs')
-
+// To do: introduce regexp for channel<category
 exports.run = async (bot, message, args, flags) => {
     console.log('Executing `!log` command!')
 
