@@ -5,39 +5,42 @@ const fs = require('fs')
 const config = require('./config.json')
 const keys = require('./private.json')
 // vars
-const client = new Discord.Client()
+const bot = new Discord.Client()
 const prefix = config.prefix
 
 
-client.commands = new Discord.Collection()
+bot.commands = new Discord.Collection()
 const commandFiles = fs.readdirSync('./commands')
     .filter(file => file.endsWith('.js'))
 
 // populate commands from commandFile array
 for (const file of commandFiles) {
     const commandFile = require(`./commands/${file}`)
-    client.commands.set(commandFile.config.name, commandFile)
+    bot.commands.set(commandFile.config.name, commandFile)
 }
 
 // On bot ready
-client.once('ready', () => {
+bot.once('ready', () => {
     console.log('Ready!')
 })
 
 
-client.on('message', message => {
+bot.on('message', message => {
     if (!message.content.startsWith(prefix)) return
 
     // slice message by whitespace for args
-    const args = message.content.slice(prefix.length).split(/ +/)
+    let args = message.content.slice(prefix.length).split(/ +/)
     // command will be the first word after the prefix
     const command = args.shift().toLowerCase()
-
-    console.log(command + ' was executed!')
+    // get flags
+    let flags = new Map(args.filter(arg => arg.startsWith('--'))
+        .map(flag => flag.slice(2).split('=')))
+    // and remove them from essential args
+    args = args.filter(arg => (!arg.startsWith('--') && arg !== ''))
 
     // execute `run` property of `commands` dict/arr: `commands[command].run`
     try {
-        client.commands.get(command).run(message, args)
+        bot.commands.get(command).run(bot, message, args, flags) // add bot to commands
     } catch (err) {
         console.error(err)
         message.reply(`there was an error trying to execute that command!\
@@ -46,4 +49,4 @@ client.on('message', message => {
 })
 
 
-client.login(keys.token)
+bot.login(keys.token)
