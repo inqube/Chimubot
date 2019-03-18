@@ -75,6 +75,7 @@ exports.run = async (bot, message, args, flags) => {
             break
     }
 
+    // not using find() with channel ID because channelName is a command arg
     let logChannel = await message.guild.channels.find(
         c => c.name == channelName && c.type == 'text')
 
@@ -84,7 +85,7 @@ exports.run = async (bot, message, args, flags) => {
     ).map(msg => ({ [msg.id]: [msg.author.username, msg.content] }))
     console.log('Fetched something!')
 
-
+    // use channel-lastmessageID
     let fetchComplete = (logs, end) => {
         return (Object.keys(logs[0])[0] == end)
     }
@@ -128,14 +129,17 @@ exports.run = async (bot, message, args, flags) => {
     if (Boolean(flags.get('use-dates')) === true) {
         for (i = 0; i < logs.length; i++) {
             for ( [key, msg] of Object.entries(logs[i]) ) {
-                var toDate = Discord.SnowflakeUtil.deconstruct(key)
-                    .date.toLocaleDateString('en-GB',
-                        { 'hour': '2-digit',
-                          'minute': '2-digit',
-                          'second': '2-digit'}
-                    )
+                var idDate = Discord.SnowflakeUtil.deconstruct(key).date
+                // be sure to get a unique key by showing ms in the date
+                var strDate = idDate.toLocaleDateString('en-GB',
+                    { 'hour': '2-digit',
+                      'minute': '2-digit',
+                      'second': '2-digit',
+                      'hour12': false})
+                    + `.${String(idDate.getMilliseconds()).padStart(3, '0')}`
+
                 delete logs[i][key]
-                logs[i][toDate] = msg
+                logs[i][strDate] = msg
             }
         }
     }
@@ -152,22 +156,31 @@ exports.run = async (bot, message, args, flags) => {
     })
     let fileSize = fileStats.size / 1024.0 // KB
 
+    let printStartDate = Discord.SnowflakeUtil.deconstruct(startID).date
+                .toLocaleDateString('en-GB',
+                    { 'timeZone': 'UTC',
+                      'hour': '2-digit',
+                      'minute': '2-digit',
+                      'second': '2-digit',
+                      'hour12': false})
+                + `.${String(Discord.SnowflakeUtil.deconstruct(startID).date
+                        .getMilliseconds()).padStart(3, '0')}`
+
+    let printEndDate = Discord.SnowflakeUtil.deconstruct(endID).date
+                .toLocaleDateString('en-GB',
+                    { 'timeZone': 'UTC',
+                      'hour': '2-digit',
+                      'minute': '2-digit',
+                      'second': '2-digit',
+                      'hour12': false})
+                + `.${String(Discord.SnowflakeUtil.deconstruct(endID).date
+                        .getMilliseconds()).padStart(3, '0')}`
+
     var fileMessage = (await new Discord.RichEmbed()
         .setTitle(`#${logChannel.name} logs`)
         .setDescription(`Logfile containing all the message logs in \
             ${logChannel} between: \
-            \n\`\`\`${Discord.SnowflakeUtil.deconstruct(startID).date
-                .toLocaleDateString('en-GB',
-                    { 'timeZone': 'UTC',
-                      'hour': '2-digit',
-                      'minute': '2-digit',
-                      'second': '2-digit'})}`+
-            `\n${Discord.SnowflakeUtil.deconstruct(endID).date
-                .toLocaleDateString('en-GB',
-                    { 'timeZone': 'UTC',
-                      'hour': '2-digit',
-                      'minute': '2-digit',
-                      'second': '2-digit'})}\`\`\``)
+            \n\`\`\`${printStartDate}\n${printEndDate}\`\`\``)
         .setColor('#AA1100')
         .setTimestamp(message.createdAt)
         .addField('Caller: ', `<@${message.author.id}>`, true)
