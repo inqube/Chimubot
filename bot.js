@@ -5,9 +5,8 @@ const fs = require('fs')
 const config = require('./config.json')
 const keys = require('./private.json')
 // vars
-const bot = new Discord.Client()
+const bot = new Discord.Client() // TO DO: consider using options
 const prefix = config.prefix
-
 
 bot.commands = new Discord.Collection()
 const commandFiles = fs.readdirSync('./commands')
@@ -19,11 +18,16 @@ for (const file of commandFiles) {
     bot.commands.set(commandFile.config.name, commandFile)
 }
 
-// On bot ready
 bot.once('ready', () => {
-    console.log('Ready!')
+    console.log(
+        `user: ${bot.user}\n` +
+        `browser: ${bot.browser}\n` +
+        // `options: ${bot.options}\n` + // prints [object Object]
+        `ping: ${bot.ping}\n` +
+        `readyAt: ${bot.readyAt}\n` +
+        `\nReady!\n`
+    )
 })
-
 
 bot.on('message', message => {
     if (!message.content.startsWith(prefix)) return
@@ -41,12 +45,19 @@ bot.on('message', message => {
     // execute `run` property of `commands` dict/arr: `commands[command].run`
     try {
         bot.commands.get(command).run(bot, message, args, flags) // add bot to commands
+        // don't delete message if there has been an error
+        try {
+            message.delete(2500)
+        } catch (err) {
+            console.error(err)
+        }
     } catch (err) {
         console.error(err)
-        message.reply(`there was an error trying to execute that command!\
-            \`\`\`${err}\`\`\``)
+        message.reply(
+            `there was an error trying to execute that command!` +
+            `\`\`\`${err}\`\`\``
+        )
     }
 })
-
 
 bot.login(keys.token)
