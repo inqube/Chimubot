@@ -118,7 +118,7 @@ exports.run = async (bot, message, args, flags) => {
     }
 
     var logs = messageLogs
-    if (!fetchComplete(logs, endID)) {
+    if (logs == 0) {  } else if (!fetchComplete(logs, endID)) {
         logs = (await continueFetching(logs))
     }
 
